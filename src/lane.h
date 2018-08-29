@@ -40,8 +40,8 @@ private: // helpers
         return LANE_RIGHT;
     }
 
-    double lane_to_d(LaneIdx lane) const {
-        return (double)lane * LANE_WIDTH + LANE_CENTER;
+    double lane_to_d(LaneIdx idx) const {
+        return static_cast<double>(idx) * LANE_WIDTH + LANE_CENTER;
     }
 
 public: // methods

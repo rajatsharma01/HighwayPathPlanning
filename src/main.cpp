@@ -195,6 +195,23 @@ vector<double> car2map(double x, double y, double ref_x, double ref_y, double re
     return {rx, ry};
 }
 
+// Return velocity along s and d in frenet coordinates
+vector<double> getFrenetVelocity(double x, double y, double vx, double vy,
+        const vector<double> &maps_x, const vector<double> &maps_y,
+        const vector<double> &maps_dx, const vector<double> &maps_dy)
+{
+#if 1
+    int wp = ClosestWaypoint(x, y, maps_x, maps_y);
+    double dx = maps_dx[wp];
+    double dy = maps_dy[wp];
+    double vd = vx*dx + vy*dy;
+    double vs = -vx*dy + vy*dx;
+    return {vs, vd};
+#else
+    return { sqrt(vx*vx + vy*vy), 0 };
+#endif
+}
+
 int main() {
     uWS::Hub h;
 
@@ -279,19 +296,33 @@ int main() {
                 car_s = end_path_s;
             }
 
+            // Initialize our car state
+            Car ego(car_s, car_speed, 0, car_d, 0, 0);
+
             // Prepare prediction list of other vehilces on this highway
             Prediction prediction;
             for (int i = 0; i < sensor_fusion.size(); i++) {
                 double s = sensor_fusion[i][5];
                 float d = sensor_fusion[i][6];
+
+                // Filter out cars which are far away in horizon
+                // FIXME handle situation when s value wraps around on track
+                if (s < (ego.get_s() - REAR_HORIZON) || s > (ego.get_s() + FRONT_HORIZON)) {
+                    continue;
+                }
+
+                double x = sensor_fusion[i][1];
+                double y = sensor_fusion[i][2];
                 double vx = sensor_fusion[i][3];
                 double vy = sensor_fusion[i][4];
                 double speed = sqrt(vx*vx + vy*vy);
 
-                prediction.add(Car(s, speed, 0, d, 0, 0).at(t_pred));
+                vector<double> VsVd = getFrenetVelocity(x, y, vx, vy,
+                                                        map_waypoints_x, map_waypoints_y,
+                                                        map_waypoints_dx, map_waypoints_dy);
+                prediction.add(Car(s, VsVd[0], 0, d, VsVd[1], 0).at(t_pred));
             }
 
-            Car ego(car_s, car_speed, 0, car_d, 0, 0);
             planner.plan(prediction, ego);
 
             // vectors to hold waypoints to be used for spline later
