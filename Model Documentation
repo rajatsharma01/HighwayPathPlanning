@@ -1,0 +1,26 @@
+Overview
+This was perhaps one of the most ambi
+https://youtu.be/4CoLHeNxSKI
+
+Trajectory Generation
+I used exact code for trajectory generation as described by Aron and David in project walkthrough video using spline library and waypoints extending the previous trajectory of the car.
+
+Path Planner
+I started out with simple path planner design as suggested in walkthrough videos and gradually enhanced with adding some simple constraints. Planner implements following set of rules.
+# 
+
+
+
+Code Structure
+In adition to changes in main.cc, I have added following new files
+car.h: Implements Car class to represent state of the car in frenet coordinates. It can be used to predict state of the car at time 't' in future.
+constants.h: Defines various tunable parameters
+lane.h: Implements the Lane class, a simple wrapper to access lane index and its next lane
+planner.h: Defines the Planner class, responsible for path planning
+planner.cpp: Implemets methods of Planner class, perhaps the most important file of this project
+prediction.h: Defines the prediction class, which maitains per lane map of predicted state of other cars on the road within a visible horizon.
+prediction.cpp: Implements methods of prediction class, specially an interface to return front and rear vehicle in a given lane aorund given 's' distance.
+spline.h: Spline library as suggested in project walkthrough and downloaded from http://kluge.in-chemnitz.de/opensource/spline/
+
+Future Scope
+Overall it was one of the most ambitious project in this nanodegree program, I had both fun and frustating momemts doing this project. I started out with high hopes to incorporate everything that had been taught in the lessons, e.g. FSM for planner, JMT for trajectory generation. Cost functions to select best trajectory and normal distrbution to pertub multiple trajectories around the target. After days of coding effort, I could not make that approach work and I started to run out of time. Here is my first attempt repo: https://github.com/rajatsharma01/CarND-Path-Planning-Project. Finally I decided to pivot back to simpler approach to finish this project on time. I started with walkthrough video implementation of the project and slowly started adding simple rules to the planner making sure everything works reasonably well for each small addition, something I should have done it from beginning of this project. Neverthless, I still hope to revisit this project after completion of this Nanodegree and try to incorporated all these ideas for a better path planning and trajectory generation.
