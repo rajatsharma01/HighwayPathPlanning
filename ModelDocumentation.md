@@ -1,20 +1,21 @@
 # Overview
-This project implements a very simple approach to highway path planning with 3 lane highways. While it's not a very robust implementation, it could perform reasonably well to meet all the project Rubric points in below run which completed 4.32 Miles in 5:16 ...
+This project implements a very simple approach to highway path planning with 3 lane highways. While it's not a very robust implementation, it could perform reasonably well to meet all the project [Rubric](https://review.udacity.com/#!/rubrics/1020/view) points in below run which completed 4.32 Miles in 5:26 ...
 
 ![4.32 Miles](./output/Completed_4dot32M_in_05m26s.png)
 
-... and total of 8.18 Miles in 10:40
+... and total of 8.18 Miles in 10:40 without any incidence.
 
 ![8.18 Miles](./output/Completed_8dot18M_in_10m40s.png)
 
 And this is the video for complete run, hope you enjoy watching it:
+
 [![video](https://img.youtube.com/vi/4CoLHeNxSKI/0.jpg)](https://www.youtube.com/watch?v=4CoLHeNxSKI)
 
-This is no where a near perfect implementation and can occasionally violate driving constrains defined in Rubric points as other vehicles in simulator appear on road in different states with random probability and this simple model doesn't handle all possible scenarios where it can break. 
+This is no where a near perfect implementation and can occasionally violate driving constrains defined in [Rubric](https://review.udacity.com/#!/rubrics/1020/view) points as other vehicles in simulator appear on road in different states with random probability and this simple model doesn't handle all possible scenarios where it can break. 
 
 ## Path Planner
 I started out with simple path planner design as suggested in walkthrough videos and gradually enhanced with adding some simple constraints. Planner implements following set of rules.
-1. Keep moving in current lane, speeding up all the way upto max speed limit.
+1. Keep moving in current lane if there is not obstacle in front, speeding up all the way upto max speed limit.
 2. If there is a car in front at a distance lower than `FRONT_GAP` threshold, try to change lane left or right.
 3. Lane change is possible if target lane meets distance from front car is more than `FRONT_GAP_LC` and similarly distance from rear car is less than `REAR_GAP_LC`.
 4. Lane change gap `FRONT_GAP_LC` > `FRONT_GAP`, this avoid changing lanes if next lane is only marginally and perhaps momemtarily better.
