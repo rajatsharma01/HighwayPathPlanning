@@ -140,7 +140,7 @@ Planner::plan(const Prediction& prediction, const Car& ego) {
         double s_diff = opportunistic ? FRONT_HORIZON : FRONT_GAP_LC;
         if ((ego.get_s() + s_diff) <= next_s) {
             std::cout << "Switching lane " << _lane << " --> " << next_lane << std::endl;
-            std::cout << "Lance change is disabled" << std::endl;
+            std::cout << "Lane change is disabled" << std::endl;
             _lc_disable = 1; // disable lane change
             _lane = next_lane;
             return;
