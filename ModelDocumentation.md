@@ -24,6 +24,68 @@ I started out with simple path planner design as suggested in walkthrough videos
 7. Avoids frequent and abrupt lane changes by disabling lane change by raising `_lc_disable` from 0 to 1. On every future path planning invocation, this counter is incremented and it resets to 0 if counter reaches `LANE_CHANGE_RESET_CNT`, thereby re-enabling lane change.
 8. Finally if lane change is not feasible, car starts to slow down.
 
+Following method implements above rules:
+
+```cplusplus
+void
+Planner::plan(const Prediction& prediction, const Car& ego) {
+    // If its first invocation, just move this car
+    if (__builtin_expect(_started, false)) {
+        _speed += SPEED_INC;
+        _started = false;
+        return;
+    }
+
+    bool opportunistic = false;
+
+    // If lane change is disabled, increment lane change counter,
+    // it will be reset once it reaches reset count
+    if (_lc_disable > 0) {
+        _lc_disable = (_lc_disable + 1) % LANE_CHANGE_RESET_CNT;
+       if (_lc_disable == 0) {
+           std::cout << "Lane change is re-enabled" << std::endl;
+       }
+    }
+
+    // If current lane is fast, we can continue to drive in this lane
+    if (is_current_lane_fast(prediction, ego)) {
+        if (_speed < MAX_SPEED - SPEED_INC) {
+            _speed += SPEED_INC;
+        }
+
+        // We prefer to stay in middle lane only as it is easier to switch
+        // either lane from middle lane. If we are already in middle lane,
+        // we are good to go.
+        if (_lane.is_middle()) {
+            return;
+        }
+        // At this point we are good to drive in current lane and no need to
+        // slow down. We are opportunistically looking for lane switch to
+        // middle lane, only possible lane switch at this point would lead to
+        // middle lane only.
+        opportunistic = true;
+    }
+
+    Lane next_lane;
+    double next_s;
+    if ((_lc_disable == 0) && find_best_lane_change(prediction, ego, next_lane, next_s)) {
+        double s_diff = opportunistic ? FRONT_HORIZON : FRONT_GAP_LC;
+        if ((ego.get_s() + s_diff) <= next_s) {
+            std::cout << "Switching lane " << _lane << " --> " << next_lane << std::endl;
+            std::cout << "Lane change is disabled" << std::endl;
+            _lc_disable = 1; // disable lane change
+            _lane = next_lane;
+            return;
+        }
+    }
+
+    // lane change is not possible, slow down if current lane requires us to slow down
+    if (!opportunistic && _speed > SPEED_DEC) {
+        _speed -= SPEED_DEC;
+    }
+}
+```
+
 ## Prediction
 As described in project walkthrough video, I have decided to consume previous_path returned by simulator and extend it further by predicting state of the cars at the end of the previous path i.e. at time `prev_sz * TIME_STEP`. For our car (call it Ego), I have assumed car speed as reported by simulator in s direction only, which is not accurate but this approximation works reasonably well. For other cars on the road, I have used dot product of `vx` and `vy` velocity component from `sensor_fusion` data with dx and dy values from closest way point to get velocity in `s` and `d` direction. Added following method:
 
