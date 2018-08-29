@@ -1,15 +1,38 @@
 Overview
-This was perhaps one of the most ambi
-https://youtu.be/4CoLHeNxSKI
 
-Trajectory Generation
-I used exact code for trajectory generation as described by Aron and David in project walkthrough video using spline library and waypoints extending the previous trajectory of the car.
+https://youtu.be/4CoLHeNxSKI
 
 Path Planner
 I started out with simple path planner design as suggested in walkthrough videos and gradually enhanced with adding some simple constraints. Planner implements following set of rules.
-# 
+# Keep moving in current lane, speeding up all the way upto max speed limit.
+# If there is a car in front at a distance lower than FRONT_GAP threshold, try to change lane left or right.
+# Lane change is possible if target lane meets distance from front car is more than FRONT_GAP_LC and similarly distance from rear car is less than REAR_GAP_LC.
+# Lane change gap FRONT_GAP_LC > FRONT_GAP, this avoid changing lanes if next lane is only marginally and perhaps momemtarily better.
+# Changing lane from middle lane has two options to the left or right lane. Lane with farther distance to car in front is picked. In case of ties, left lane is chosen.
+# Car has preference to drive in middle lane as it is strategically the best lane where both lane change options are open. If current lane of the car (left or right) is fast enough and middle lane has no front car in horizon, planner makes an opportunistic lane change to middle lane.
+# Avoids frequent and abrupt lane changes by disabling lane change by raising _lc_disable from 0 to 1. On every future path planning invocation, this counter is incremented and it resets to 0 if counter reaches LANE_CHANGE_RESET_CNT, thereby re-enabling lane change.
+# Finally if lane change is not feasible, car starts to slow down.
 
+Prediction
+As described in project walkthrough video, I have decided to consume previous_path returned by simulator and extend it further by predicting state of the cars at the end of the previous path i.e. at time prev_sz * TIME_STEP. For our car (call it Ego), I have assumed car speed as reported by simulator in s direction only, which is not accurate but this approximation works reasonably well. For other cars on the road, I have used dot product of vx and vy velocity component from sensor_fusion data with dx and dy values from closest way point to get velocity in s and d direction. Added following method:
 
+// Return velocity along s and d in frenet coordinates
+vector<double> getFrenetVelocity(double x, double y, double vx, double vy,
+        const vector<double> &maps_x, const vector<double> &maps_y,
+        const vector<double> &maps_dx, const vector<double> &maps_dy)
+{
+    int wp = ClosestWaypoint(x, y, maps_x, maps_y);
+    double dx = maps_dx[wp];
+    double dy = maps_dy[wp];
+    double vd = vx*dx + vy*dy;
+    double vs = -vx*dy + vy*dx;
+    return {vs, vd};
+}
+
+The predicted states of all the cars within a visible horizon bounded by FRONT_HORIZON and REAR_HORIZON are added to a Prediction class which maintains a map of every lane. This class comes in handy when planner enquires for distance to front and rear car in a particular lane at a particular s distance.
+
+Trajectory Generation
+I used exact code for trajectory generation as described by Aron and David in project walkthrough video using spline library and waypoints extending the previous trajectory of the car.
 
 Code Structure
 In adition to changes in main.cc, I have added following new files
